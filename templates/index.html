@@ -35,7 +35,6 @@
         });
 
         socket.on('reset_counter', (data) => {
-            data.counter = 0
             document.getElementById('counter').textContent = data.counter;
         });
     </script>

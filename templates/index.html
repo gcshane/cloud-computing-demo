@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shared Counter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 100px; }
+        button { font-size: 20px; padding: 10px 20px; }
+        h1 { font-size: 50px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1 id="counter">0</h1>
+    <button onclick="incrementCounter()">Increment Counter</button>
+
+    <script>
+        const socket = io();
+
+        // Function to send increment event to server
+        function incrementCounter() {
+            socket.emit('increment_counter');
+        }
+
+        // Listen for counter updates from the server
+        socket.on('update_counter', (data) => {
+            document.getElementById('counter').textContent = data.counter;
+        });
+    </script>
+</body>
+</html>

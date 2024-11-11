@@ -14,6 +14,7 @@
 <body>
     <h1 id="counter">0</h1>
     <button onclick="incrementCounter()">Increment Counter</button>
+    <button onclick="resetCounter()">Reset Counter</button>
 
     <script>
         const socket = io();
@@ -23,9 +24,18 @@
             socket.emit('increment_counter');
         }
 
+        // Function to send reset event to server
+        function resetCounter() {
+            socket.emit('reset_counter');
+        }
+
         // Listen for counter updates from the server
         socket.on('update_counter', (data) => {
             document.getElementById('counter').textContent = data.counter;
+        });
+
+        socket.on('reset_counter', (data) => {
+            document.getElementById('counter').textContent = 0;
         });
     </script>
 </body>

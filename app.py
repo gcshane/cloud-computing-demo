@@ -20,10 +20,16 @@ def handle_increment():
 
 # Handle reset button click event
 @socketio.on('reset_counter')
-def reset_increment():
+def reset_counter():
     global counter
     counter = 0
     socketio.emit('reset_counter', {'counter': counter})
 
+# Handle on load event
+@socketio.on('load_counter')
+def load_counter():
+    global counter
+    socketio.emit('load_counter', {'counter': counter})
+    
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=8080)

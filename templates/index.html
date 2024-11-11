@@ -11,7 +11,7 @@
         h1 { font-size: 50px; margin-bottom: 20px; }
     </style>
 </head>
-<body>
+<body onload="loadCounter()">
     <h1 id="counter">0</h1>
     <button onclick="incrementCounter()">Increment Counter</button>
     <button onclick="resetCounter()">Reset Counter</button>
@@ -29,6 +29,10 @@
             socket.emit('reset_counter');
         }
 
+        function loadCounter() {
+            socket.emit('load_counter')
+        }
+
         // Listen for counter updates from the server
         socket.on('update_counter', (data) => {
             document.getElementById('counter').textContent = data.counter;
@@ -37,6 +41,11 @@
         socket.on('reset_counter', (data) => {
             document.getElementById('counter').textContent = data.counter;
         });
+
+        socket.on('load_counter', (data) => {
+            document.getElementById('counter').textContent = data.counter;
+        });
+        
     </script>
 </body>
 </html>

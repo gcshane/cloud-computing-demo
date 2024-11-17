@@ -1,51 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shared Counter</title>
+    <title>Counter Minigame</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 100px; }
-        button { font-size: 20px; padding: 10px 20px; }
-        h1 { font-size: 50px; margin-bottom: 20px; }
-    </style>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
-<body onload="loadCounter()">
-    <h1 id="counter">0</h1>
-    <button onclick="incrementCounter()">Increment Counter</button>
-    <button onclick="resetCounter()">Reset Counter</button>
+
+<body>
+    <div id="login-section">
+        <h2>Welcome to the Counter Minigame!</h2>
+        <input type="text" id="username" placeholder="Enter a unique username" oninput="checkHostUsername()">
+        <div id="password-container" style="display: none;">
+            <input type="password" id="host-password" placeholder="Enter host password">
+        </div>
+        <button id="join-btn" onclick="checkUsername()">Join Game</button>
+        <p id="login-error" style="color: red;"></p>
+    </div>
+
+    <div id="game-section" style="display: none;">
+        <h1>Leaderboard</h1>
+        <ul id="leaderboard"></ul>
+        <button id="increment-btn" onclick="incrementCounter()">Tap!</button>
+
+        <div id="host-controls" style="display: none;">
+            <h2>Host Controls</h2>
+            <button onclick="resetGame()">Reset Game</button>
+            <button onclick="toggleClicks()" id="toggle-clicks-btn">Disable Clicks</button>
+            <h3>Players Logged In:</h3>
+            <ul id="player-list"></ul>
+        </div>
+
+        <button onclick="logout()">Logout</button>
+    </div>
 
     <script>
         const socket = io();
+        let username = '';
+        let isHost = false;
+        let clicksEnabled = true;
 
-        // Function to send increment event to server
+        function checkHostUsername() {
+            const input = document.getElementById('username').value.trim().toLowerCase();
+            const passwordContainer = document.getElementById('password-container');
+            if (input === 'host') {
+                passwordContainer.style.display = 'block';
+                isHost = true;
+            } else {
+                passwordContainer.style.display = 'none';
+                isHost = false;
+            }
+        }
+
+        function checkUsername() {
+            username = document.getElementById('username').value.trim();
+            const password = document.getElementById('host-password')?.value.trim() || '';
+            if (username) {
+                socket.emit('check_username', { username, password });
+            }
+        }
+
         function incrementCounter() {
-            socket.emit('increment_counter');
+            if (clicksEnabled) {
+                socket.emit('increment_counter', { username });
+            } else {
+                alert('Clicking is currently disabled!');
+            }
         }
 
-        // Function to send reset event to server
-        function resetCounter() {
-            socket.emit('reset_counter');
+        function resetGame() {
+            const password = document.getElementById('host-password')?.value.trim() || '';
+            socket.emit('reset_game', { username, password });
         }
 
-        function loadCounter() {
-            socket.emit('load_counter')
+        function toggleClicks() {
+            const password = document.getElementById('host-password')?.value.trim() || '';
+            socket.emit('toggle_clicks', { username, password });
         }
 
-        // Listen for counter updates from the server
-        socket.on('update_counter', (data) => {
-            document.getElementById('counter').textContent = data.counter;
+        function logout() {
+            username = '';
+            isHost = false;
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('game-section').style.display = 'none';
+            document.getElementById('username').value = '';
+            document.getElementById('host-password').value = '';
+        }
+
+        // Socket Events
+        socket.on('login_success', (data) => {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('game-section').style.display = 'block';
+            updateLeaderboard(data.leaderboard);
+            clicksEnabled = data.clicks_enabled;
+            if (isHost) {
+                document.getElementById('host-controls').style.display = 'block';
+            } else {
+                document.getElementById('host-controls').style.display = 'none';
+            }
+            updatePlayerList(data.players);
         });
 
-        socket.on('reset_counter', (data) => {
-            document.getElementById('counter').textContent = data.counter;
+        socket.on('update_leaderboard', (data) => {
+            updateLeaderboard(data.leaderboard);
         });
 
-        socket.on('load_counter', (data) => {
-            document.getElementById('counter').textContent = data.counter;
+        socket.on('clicks_toggled', (data) => {
+            clicksEnabled = data.clicks_enabled;
+            document.getElementById('toggle-clicks-btn').textContent = clicksEnabled ? 'Disable Clicks' : 'Enable Clicks';
         });
-        
+
+        function updateLeaderboard(leaderboard) {
+            const leaderboardElement = document.getElementById('leaderboard');
+            leaderboardElement.innerHTML = '';
+            leaderboard.forEach(([user, score], index) => {
+                const li = document.createElement('li');
+                let trophy = '';
+
+                if (index === 0) trophy = ' 🏆';
+                else if (index === 1) trophy = ' 🥈';
+                else if (index === 2) trophy = ' 🥉';
+
+                li.textContent = `${trophy} ${user}: ${score}`;
+                leaderboardElement.appendChild(li);
+            });
+        }
+
+        socket.on('update_player_list', (data) => {
+            updatePlayerList(data.players);
+        });
+
+        function updatePlayerList(players) {
+            const playerListElement = document.getElementById('player-list');
+            playerListElement.innerHTML = '';
+            players.forEach((player) => {
+                const li = document.createElement('li');
+                li.textContent = player;
+                playerListElement.appendChild(li);
+            });
+        }
     </script>
 </body>
+
 </html>
